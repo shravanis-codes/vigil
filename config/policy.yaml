@@ -1,0 +1,82 @@
+# VIGIL policy configuration
+# ---------------------------------------------------------------
+# Edit this file to change how risky each action is.
+# The decision RULES live in vigil/policy.py; the NUMBERS live here.
+# Restart the backend after editing.
+
+# Risk tiers, lowest to highest.
+risk_tiers: [low, medium, high, critical]
+
+# A "real voice" verdict based on less audio than this is treated as
+# weak evidence for high/critical actions (short clips are less reliable;
+# DetectifAI recommends at least 10 seconds of speech).
+min_reliable_speech_seconds: 10
+
+# Live calls: low-risk actions may proceed on the EARLY verdict.
+# Anything at or above this tier waits for a final verdict.
+wait_for_final_from_tier: medium
+
+actions:
+  # ---------------- Banking ----------------
+  check_balance:
+    label: Check account balance
+    domain: banking
+    base_risk: low
+    ivr_digit: "1"
+  transfer_existing_payee:
+    label: Transfer to an existing payee
+    domain: banking
+    base_risk: medium
+    amount_tiers:        # amount at or above -> tier
+      high: 50000
+      critical: 500000
+  transfer_new_payee:
+    label: Transfer to a new payee
+    domain: banking
+    base_risk: high
+    ivr_digit: "2"
+    demo_amount: 5000
+    amount_tiers:
+      critical: 100000
+  change_registered_phone:
+    label: Change registered phone number
+    domain: banking
+    base_risk: high
+
+  # ---------------- IT helpdesk ----------------
+  unlock_account:
+    label: Unlock account
+    domain: helpdesk
+    base_risk: low
+  password_reset:
+    label: Reset password
+    domain: helpdesk
+    base_risk: high
+    ivr_digit: "3"
+  mfa_reset:
+    label: Reset multi-factor authentication
+    domain: helpdesk
+    base_risk: critical
+
+  # ---------------- Exams ----------------
+  exam_check_in:
+    label: Exam check-in (remote / viva)
+    domain: exam
+    base_risk: high
+    ivr_digit: "4"
+  exam_reentry:
+    label: Re-enter exam after disconnect
+    domain: exam
+    base_risk: medium
+
+# What "step up" and "escalate" mean per domain (shown to operators / callers).
+domains:
+  banking:
+    step_up: Send a one-time code to the registered phone
+    escalate_to: Fraud operations team
+  helpdesk:
+    step_up: Call back on the number on file and get manager approval
+    escalate_to: Security operations team
+  exam:
+    step_up: Live ID check by the invigilator
+    escalate_to: Exam integrity officer
